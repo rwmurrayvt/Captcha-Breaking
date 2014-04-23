@@ -1,0 +1,33 @@
+# Original code written by Debasish Mandal.
+# Modified by Robert Murray
+
+import httplib
+import re
+import time
+import os
+
+headers = {'Accept':'*/*','Accept-Encoding':'gzip,deflate,sdch','Accept-Language':'en-US,en;q=0.8','Connection':'keep-alive','Referer':'http://www.google.com/recaptcha/demo/'}
+
+for i in range(100):
+		print '[+] Loading Capctha..'
+		print '[+] Getting Captcha ID..'
+		con = httplib.HTTPConnection('www.google.com')
+		con.request("GET", "/recaptcha/demo/","",headers)
+		match = re.findall('http://www.google.com(.*?)"></script>',con.getresponse().read())
+		con.request("GET", match[0],'',headers)
+		k = match[0][27:]
+		print '[+] Captcha ID is..',k
+		match = re.findall("challenge :(.*?)',",con.getresponse().read())
+		challenge =  match[0]
+		reload = '/recaptcha/api/reload?c='+ challenge[2:] +'&k='+ k +'&reason=v&type=image&lang=en'
+		print '[+] Reloading Captcha...'
+		con.request("GET",reload,"",headers)
+		print '[+] Getting Image code...'
+		match = re.findall("Recaptcha.finish_reload(.*?)image",con.getresponse().read())
+		print match[0]
+		con.request('GET', '/recaptcha/api/image?c='+match[0][2:-4],'',headers)
+		f = open('data%i.jpeg' %i,'wb')
+		f.write(con.getresponse().read())
+		f.close()
+		print '[+] IMAGE Saved!!'
+		con.close()
